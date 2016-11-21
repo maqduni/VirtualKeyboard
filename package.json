@@ -1,6 +1,6 @@
 {
   "name": "virtkeys",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Virtual on-screen keyboard",
   "main": "./dist/virtkeys.js",
   "scripts": {
