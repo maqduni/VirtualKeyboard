@@ -1,0 +1,24 @@
+{
+  "name": "virtkeys",
+  "description": "Virtual on-screen keyboard",
+  "main": "./dist/virtkeys.js",
+  "authors": [
+    "Iskandar Rafiev"
+  ],
+  "license": "ISC",
+  "keywords": [
+    "virtual",
+    "keyboard",
+    "onscreen",
+    "layout",
+    "multi-lingual"
+  ],
+  "homepage": "https://github.com/maqduni/VirtualKeyboard",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

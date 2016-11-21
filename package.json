@@ -1,19 +1,23 @@
 {
-  "name": "virtual-keyboard",
-  "version": "0.0.1",
+  "name": "virtkeys",
+  "version": "0.8.0",
   "description": "Virtual on-screen keyboard",
-  "main": "virtualkeyboard.js",
+  "main": "./dist/virtkeys.js",
   "scripts": {
     "wp-dev": "webpack -d --progress --colors",
     "wp-dev:w": "webpack -d --progress --colors --watch"
   },
-  "author": "",
+  "author": "Iskandar Rafiev",
   "license": "ISC",
   "devDependencies": {
     "babel-core": "^6.18.2",
     "babel-loader": "^6.2.7",
     "babel-preset-es2015": "^6.18.0",
     "circular-dependency-plugin": "^2.0.0",
+    "remove-comments-loader": "^0.1.2",
     "webpack": "^1.13.3"
+  },
+  "dependencies": {
+    "jquery": "^3.0.0"
   }
 }

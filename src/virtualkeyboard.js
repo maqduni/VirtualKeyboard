@@ -1409,7 +1409,7 @@ const VirtualKeyboard = new function () {
                 *  if new key is not an another deadkey
                 */
                 res[1] = 0;
-                var dks = lang.dk[buf]
+                var dks = lang.dk[buf],
                 idx = dks.indexOf(tchr) + 1;
                 res[0] = idx ? dks.charAt(idx)
                     : tchr;
@@ -1870,6 +1870,5 @@ VirtualKeyboard.IME = new function () {
 for (var i = 0, aL = Layouts.length; i < aL; i++) {
     VirtualKeyboard.addLayout(Layouts[i]);
 }
-window.VirtualKeyboard = VirtualKeyboard;
 
 export { VirtualKeyboard };

@@ -8,10 +8,13 @@ var webpack = require('webpack');
 var CircularDependencyPlugin = require('circular-dependency-plugin');
 
 module.exports = {
-  entry: './src/virtualkeyboard.js',
+  entry: {
+    'virtkeys': './src/jq-wrapper.js',
+    // 'virtkeys.min': './src/jq-wrapper.js'
+  },
   output: {
-    path: './release',
-    filename: 'main.js'
+    path: './dist',
+    filename: '[name].js'
   },
   module: {
     loaders: [
@@ -24,17 +27,26 @@ module.exports = {
           presets: ['es2015']
         }
       },
+      {
+          test: /.js$/,
+          loader: 'remove-comments-loader'
+      }
     ]
   },
   resolve: {
     extensions: ['', '.js']
   },
   plugins: [
-    new CircularDependencyPlugin({
-      // exclude detection of files based on a RegExp 
-      exclude: /a\.js/,
-      // add errors to webpack instead of warnings 
-      failOnError: true
+    // new CircularDependencyPlugin({
+    //   // exclude detection of files based on a RegExp 
+    //   exclude: /a\.js/,
+    //   // add errors to webpack instead of warnings 
+    //   failOnError: true
+    // }),
+    new webpack.optimize.UglifyJsPlugin({
+      include: /\.min\.js$/,
+      mangel: false,
+      sourceMap: false
     })
   ]
 }

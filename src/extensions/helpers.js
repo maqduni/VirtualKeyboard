@@ -12,7 +12,7 @@
 //  Variable/property checks
 //-----------------------------------------------------------------------------
 /**
- *  Checks if property is undefined
+ *  Checks if property is undefined©©
  *
  *  @param {Object} prop value to check
  *  @return {Boolean} true if matched
@@ -128,12 +128,15 @@ function isEmpty(prop /* :Object */) /* :Boolean */ {
  *  @scope public
  */
 function gluePath() /* :String */ {
-    var aL = arguments.length, i = aL - 2, s = arguments[aL - 1];
-    for (; i >= 0; i--)
-        s = ((!isString(arguments[i]) && !isNumber(arguments[i])) || isEmpty(arguments[i])
-            ? s
-            : arguments[i] + '\x00' + s);
-    return s ? s.replace(/\/*\x00+\/*/g, "/") : "";
+    // var aL = arguments.length, i = aL - 2, s = arguments[aL - 1];
+    // for (; i >= 0; i--)
+    //     s = ((!isString(arguments[i]) && !isNumber(arguments[i])) || isEmpty(arguments[i])
+    //         ? s
+    //         : arguments[i] + '\x00' + s);
+    // var regexp = /\/*\x00+\/*/g,
+    //     replaceWith = '/';
+    // return s ? s.replace(regexp, replaceWith) : '';
+    throw 'Commented out because of UglifyJsPlugin and RemoveCommentsLoader';
 }
 
 /**
