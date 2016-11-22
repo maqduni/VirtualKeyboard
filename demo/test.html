@@ -8,9 +8,21 @@
 
         <script src="./../node_modules/jquery/dist/jquery.js"></script>
         <script src="./../dist/virtkeys.js"></script>
+        <script src="./../dist/layouts/TG.js"></script>
+
+        <script>
+            $(document).ready(() => {
+                var kb = $('#td1').virtkeys(),
+                    layouts = kb.getLoadedLayouts();
+
+                kb.addLayouts(layouts.TG.filter((l) => { return l.name.indexOf('Cyrillic') > -1 }));
+                kb.open('testb1');
+                // console.log(kb);
+            });
+        </script>
     </head>
-    <body onload="$('#td').virtkeys().toggle($('#testb'));">
-        <textarea name="testb" id="testb" type="text" cols="35" rows="6" style="font-size: 150%" wrap="soft"></textarea>
-        <div id="td"></div>
+    <body>
+        <textarea id="testb1" type="text" cols="35" rows="6" style="font-size: 150%" wrap="soft"></textarea>
+        <div id="td1"></div>
     </body>
 </html>
