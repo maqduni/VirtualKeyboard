@@ -17,6 +17,8 @@
 
                 kb.addLayouts(layouts.TG.filter((l) => { return l.name.indexOf('Cyrillic') > -1 }));
                 kb.open('testb1');
+
+                var kb1 = $('#td1').virtkeys({ showKeyboardMaps: false, showKeyboardLayouts: true });
                 // console.log(kb);
             });
         </script>

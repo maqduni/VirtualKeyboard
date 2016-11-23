@@ -1036,9 +1036,11 @@
 	        return html.join("");
 	    };
 	
+	    var _initialized = false;
 	    self.init = function (opts) {
+	        console.log(_initialized);
+	        if (_initialized) return;
 	        var _opts = (0, _helpers.mergeObject)(options, opts);
-	        console.log(_opts);
 	
 	        nodes.keyboard = document.createElement('div');
 	        nodes.keyboard.unselectable = "on";
@@ -1100,6 +1102,8 @@
 	        };
 	
 	        options.layout = _opts.layout;
+	
+	        _initialized = true;
 	    };
 	}();
 	

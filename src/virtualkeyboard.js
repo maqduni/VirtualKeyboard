@@ -1527,9 +1527,12 @@ const VirtualKeyboard = new function () {
     /**
      *  Keyboard initializer
      */
+    // TODO: This is a workaround for when the keybord gets initialized more than once, needs to be fixed
+    var _initialized = false;
     self.init = function(opts) {
+        console.log(_initialized);
+        if (_initialized) return;
         var _opts = mergeObject(options, opts);
-        console.log(_opts);
 
         /*
         *  create keyboard UI
@@ -1615,6 +1618,8 @@ const VirtualKeyboard = new function () {
         // var opts = getScriptQuery('virtualkeyboard.js');
         // options.layout = DocumentCookie.get('vk_layout') || opts.vk_layout || null;
         options.layout = _opts.layout;
+
+        _initialized = true;
     }
 }
 /**
