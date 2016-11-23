@@ -59,24 +59,22 @@
 	
 	__webpack_require__(/*! ./extensions/ext/string */ 5);
 	
-	var _documentcookie = __webpack_require__(/*! ./extensions/documentcookie */ 6);
+	var _documentselection = __webpack_require__(/*! ./extensions/documentselection */ 6);
 	
-	var _documentselection = __webpack_require__(/*! ./extensions/documentselection */ 7);
+	var _dom = __webpack_require__(/*! ./extensions/dom */ 7);
 	
-	var _dom = __webpack_require__(/*! ./extensions/dom */ 8);
+	var _eventmanager = __webpack_require__(/*! ./extensions/eventmanager */ 8);
 	
-	var _eventmanager = __webpack_require__(/*! ./extensions/eventmanager */ 9);
-	
-	var _scriptqueue = __webpack_require__(/*! ./extensions/scriptqueue */ 10);
-	
-	var _ime = __webpack_require__(/*! ./ime */ 11);
+	var _ime = __webpack_require__(/*! ./ime */ 9);
 	
 	var VirtualKeyboard = new function () {
 	    var self = this;
 	    self.$VERSION$ = "3.6.1.585";
 	
 	    var options = {
-	        'layout': null
+	        'layout': null,
+	        'showKeyboardMaps': true,
+	        'showKeyboardLayouts': true
 	    };
 	
 	    var idPrefix = 'kb_b';
@@ -272,7 +270,6 @@
 	
 	        __toggleInputDir();
 	
-	        _documentcookie.DocumentCookie.set('vk_layout', code);
 	        return true;
 	    };
 	
@@ -605,7 +602,7 @@
 	    };
 	
 	    var switchMapping = function switchMapping(e) {
-	        _documentcookie.DocumentCookie.set('vk_mapping', e.target.value);
+	
 	        keymap = keymaps[e.target.value];
 	    };
 	
@@ -1037,12 +1034,16 @@
 	        }
 	        html.push(" >\xa0" + char + "\xa0</span>");
 	        return html.join("");
-	    };(function () {
+	    };
+	
+	    self.init = function (opts) {
+	        var _opts = (0, _helpers.mergeObject)(options, opts);
+	        console.log(_opts);
 	
 	        nodes.keyboard = document.createElement('div');
 	        nodes.keyboard.unselectable = "on";
 	        nodes.keyboard.id = 'virtualKeyboard';
-	        nodes.keyboard.innerHTML = ("<div id=\"kbDesk\"><!-- --></div>" + "<select id=\"kb_langselector\"></select>" + "<select id=\"kb_mappingselector\"></select>" + '<div id="copyrights" nofocus="true"><a href="http://debugger.ru/projects/virtualkeyboard" target="_blank" title="&copy;2006-2009 Debugger.ru">VirtualKeyboard ' + self.$VERSION$ + '</a></div>').replace(/(<\w+)/g, "$1 unselectable='on' ");
+	        nodes.keyboard.innerHTML = ('<div id=\"kbDesk\"><!-- --></div>' + '<select id=\"kb_langselector\" ' + (_opts.showKeyboardLayouts ? '' : 'style=\"display: none;\"') + '></select>' + '<select id=\"kb_mappingselector\" ' + (_opts.showKeyboardMaps ? '' : 'style=\"display: none;\"') + '></select>').replace(/(<\w+)/g, "$1 unselectable='on' ");
 	
 	        nodes.desk = nodes.keyboard.firstChild;
 	
@@ -1054,8 +1055,6 @@
 	
 	        var el = el.nextSibling,
 	            mapGroup = "";
-	
-	        keymap = _documentcookie.DocumentCookie.get('vk_mapping');
 	
 	        if (!keymaps.hasOwnProperty(keymap)) keymap = 'QWERTY Standard';
 	
@@ -1100,9 +1099,8 @@
 	            if (!e || !e.target.tagName || 'select' != e.target.tagName.toLowerCase()) return false;
 	        };
 	
-	        var opts = (0, _helpers.getScriptQuery)('virtualkeyboard.js');
-	        options.layout = _documentcookie.DocumentCookie.get('vk_layout') || opts.vk_layout || null;
-	    })();
+	        options.layout = _opts.layout;
+	    };
 	}();
 	
 	VirtualKeyboard.Langs = {};
@@ -1110,20 +1108,25 @@
 	VirtualKeyboard.IME = _ime.IME;
 	
 	(function ($) {
-	    $.fn.virtkeys = function () {
-	        this.VirtualKeyboard = VirtualKeyboard;
+	    $.fn.virtkeys = function (opts) {
+	        var jqObj = this;
 	
-	        this.open = _open;
-	        this.close = _close;
-	        this.toggle = _toggle;
+	        (function () {
+	            VirtualKeyboard.init(opts || {});
 	
-	        this.getLayoutCodes = _getLayoutCodes;
-	        this.switchLayout = _switchLayout;
-	        this.addLayouts = _addLayouts;
-	        this.getLoadedLayouts = _getLoadedLayouts;
+	            jqObj.VirtualKeyboard = VirtualKeyboard;
 	
-	        this.enableIME = _enableIME;
-	        this.addIMELanguages = _addIMELanguages;
+	            jqObj.open = _open;
+	            jqObj.close = _close;
+	            jqObj.toggle = _toggle;
+	
+	            jqObj.getLayoutCodes = _getLayoutCodes;
+	            jqObj.switchLayout = _switchLayout;
+	            jqObj.addLayouts = _addLayouts;
+	            jqObj.getLoadedLayouts = _getLoadedLayouts;
+	
+	            jqObj.addIMELanguages = _addIMELanguages;
+	        })();
 	
 	        function _open(input) {
 	            VirtualKeyboard.open(input instanceof $ ? input.get(0) : input, this.get(0));
@@ -1155,19 +1158,13 @@
 	            return $.fn.virtkeys._layouts;
 	        }
 	
-	        function _enableIME(ime) {
-	            if (ime === undefined && (ime = $.fn.virtkeys._ime) === undefined) throw 'Object containing IME cannot be found.';
-	
-	            VirtualKeyboard.IME = ime;
-	        }
-	
 	        function _addIMELanguages(langs) {
 	            if (langs === undefined && (langs = $.fn.virtkeys._langs) === undefined) throw 'Object containing IME languages cannot be found.';
 	
 	            VirtualKeyboard.Langs = langs;
 	        }
 	
-	        return this;
+	        return jqObj;
 	    };
 	
 	    $.fn.virtkeys._layouts = {};
@@ -1790,66 +1787,6 @@
 
 /***/ },
 /* 6 */
-/*!******************************************!*\
-  !*** ./src/extensions/documentcookie.js ***!
-  \******************************************/
-/***/ function(module, exports) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	
-	var DocumentCookie = new function () {
-	    var self = this;
-	
-	    var cookie = {};
-	
-	    self.get = function (name) {
-	        return cookie[name];
-	    };
-	
-	    self.set = function (name, value, expire, path, domain, secure) {
-	        if (name) {
-	            value = escape(value);
-	            document.cookie = name + "=" + value + (path ? ";path=" + path : "") + (expire ? ";NoExp=" + (expire instanceof Date ? expire.toGMTString() : new Date(new Date().getTime() + expire * 1000).toGMTString()) : "") + (domain ? ";domain=" + domain || document.location.domain : "") + (secure ? ";secure" : "");
-	            cookie[name] = value;
-	            return true;
-	        }
-	        return false;
-	    };
-	
-	    self.isSet = function (name) {
-	        return !!cookie[name];
-	    };
-	
-	    self.del = function (name, path, domain) {
-	        if (Cookie.isSet(name)) {
-	            document.cookie = name + "=" + (path ? "; path=" + path : "") + (domain ? "; domain=" + domain : "") + (secure ? "; secure" : "") + "; NoExp=Thu, 01-Jan-70 00:00:01 GMT";
-	            delete cookie[name];
-	            return true;
-	        }
-	        return false;
-	    };
-	
-	    self.delAll = function () {
-	        for (var i in cookie) {
-	            if (cookie.hasOwnProperty(i)) self.del(i);
-	        }
-	    };(function () {
-	        var p = document.cookie.split(/\s*;\s*/);
-	        for (var i = 0, pL = p.length; i < pL; i++) {
-	            var parts = p[i].split(/\s*=\s*/);
-	            cookie[parts[0]] = unescape(parts[1]);
-	        }
-	    })();
-	}();
-	
-	exports.DocumentCookie = DocumentCookie;
-
-/***/ },
-/* 7 */
 /*!*********************************************!*\
   !*** ./src/extensions/documentselection.js ***!
   \*********************************************/
@@ -1862,7 +1799,7 @@
 	});
 	exports.DocumentSelection = undefined;
 	
-	var _dom = __webpack_require__(/*! ./dom */ 8);
+	var _dom = __webpack_require__(/*! ./dom */ 7);
 	
 	var DocumentSelection = new function () {
 	    var self = this;
@@ -2381,7 +2318,7 @@
 	exports.DocumentSelection = DocumentSelection;
 
 /***/ },
-/* 8 */
+/* 7 */
 /*!*******************************!*\
   !*** ./src/extensions/dom.js ***!
   \*******************************/
@@ -2623,7 +2560,7 @@
 	exports.DOM = DOM;
 
 /***/ },
-/* 9 */
+/* 8 */
 /*!****************************************!*\
   !*** ./src/extensions/eventmanager.js ***!
   \****************************************/
@@ -2638,7 +2575,7 @@
 	
 	var _helpers = __webpack_require__(/*! ./helpers */ 1);
 	
-	var _dom = __webpack_require__(/*! ./dom */ 8);
+	var _dom = __webpack_require__(/*! ./dom */ 7);
 	
 	var EM = new function () {
 	    var self = this;
@@ -2942,131 +2879,7 @@
 	exports.EM = EM;
 
 /***/ },
-/* 10 */
-/*!***************************************!*\
-  !*** ./src/extensions/scriptqueue.js ***!
-  \***************************************/
-/***/ function(module, exports) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	
-	var ScriptQueue = function ScriptQueue(cbk) {
-	    var self = this,
-	        staticFn = arguments.callee;
-	
-	    if ('function' != typeof cbk) cbk = function cbk() {};
-	
-	    var queue = [];
-	
-	    self.load = function (path) {
-	        load(path, cbk);
-	    };
-	
-	    self.queue = function (path) {
-	        var f = queue.length;
-	        queue[f] = path;
-	        if (!f) load(path, queuemonitor);
-	    };
-	
-	    var load = function load(path, cbk) {
-	        var sid,
-	            scr = staticFn.scripts;
-	        if (sid = scr.hash[path]) {
-	            scr = staticFn.scripts[sid];
-	            if (scr[2]) {
-	                cbk(path, scr[2]);
-	            } else {
-	                scr[1].push(cbk);
-	            }
-	        } else {
-	            sid = scr.length;
-	            scr[sid] = [path, [cbk], false];
-	            scr.hash[path] = sid;
-	            ls(path);
-	        }
-	    };
-	
-	    var ls = function ls(src) {
-	        if (document.body) {
-	            var s = document.createElement('script'),
-	                h = document.getElementsByTagName("head")[0];
-	            s.type = "text/javascript";
-	            s.charset = "UTF-8";
-	            s.src = src;
-	
-	            s.rSrc = src;
-	            s.onerror = s.onload = s.onreadystatechange = loadmonitor;
-	            h.appendChild(s);
-	        } else {
-	            document.write("<scr" + "ipt onload=\"\" src=\"" + src + "\" charset=\"UTF-8\"></scr" + "ipt>");
-	
-	            loadmonitor.call({ 'rSrc': src }, { 'type': 'load' });
-	        }
-	    };
-	
-	    var queuemonitor = function queuemonitor(path, s) {
-	
-	        cbk(path, s);
-	        queue.splice(0, 1);
-	
-	        if (queue.length && s) load(queue[0], queuemonitor);else cbk(null, s);
-	    };
-	
-	    var loadmonitor = function loadmonitor(e) {
-	        var scr = staticFn.scripts,
-	            sid = scr.hash[this.rSrc],
-	            e = e || window.event,
-	            res;
-	
-	        scr = scr[sid];
-	        if (scr && !scr[2]) {
-	            if ('load' == e.type || 'complete' == this.readyState || 'loaded' == this.readyState) {
-	                scr[2] = res = true;
-	            } else if ('error' == e.type) {
-	                res = false;
-	            }
-	            if (null != res) {
-	                for (var i = 0, cbk = scr[1], cL = cbk.length; i < cL; i++) {
-	                    cbk[i](scr[0], scr[2]);
-	                }
-	                if (!res) {
-	                    delete staticFn.scripts.hash[this.rSrc];
-	                    delete staticFn.scripts[sid];
-	                }
-	            }
-	        }
-	    };
-	};
-	
-	ScriptQueue.scripts = [false];
-	ScriptQueue.scripts.hash = {};
-	
-	ScriptQueue.queue = function (arr, cbk) {
-	    if (!arr.length) return;
-	    var q = new ScriptQueue(cbk);
-	    for (var i = 0, aL = arr.length; i < aL; i++) {
-	        q.queue(arr[i]);
-	    }
-	};
-	
-	ScriptQueue.load = function (src, cbk) {
-	    if (src) {
-	        new ScriptQueue(cbk).load(src);
-	    }
-	};
-	
-	if (window.ScriptQueueIncludes instanceof Array) {
-	    ScriptQueue.queue(window.ScriptQueueIncludes);
-	}
-	
-	exports.ScriptQueue = ScriptQueue;
-
-/***/ },
-/* 11 */
+/* 9 */
 /*!********************!*\
   !*** ./src/ime.js ***!
   \********************/

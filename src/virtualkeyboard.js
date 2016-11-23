@@ -1,15 +1,15 @@
-﻿import { isUndefined, isFunction, isString, isNumber, isNumeric, isArray, isRegExp, isBoolean, isScalar, isEmpty,
-    getScriptQuery } from './extensions/helpers';
+﻿import { isUndefined, isFunction, isString, isNumber, isNumeric, isArray, isRegExp, isBoolean, isScalar, 
+    isEmpty, mergeObject } from './extensions/helpers';
 import './extensions/ext/array';
 import './extensions/ext/object';
 import './extensions/ext/regexp';
 import './extensions/ext/string';
 // import { Langs, Layouts } from './layouts/layouts';
-import { DocumentCookie } from './extensions/documentcookie';
+// import { DocumentCookie } from './extensions/documentcookie';
 import { DocumentSelection } from './extensions/documentselection';
 import { DOM } from './extensions/dom';
 import { EM } from './extensions/eventmanager';
-import { ScriptQueue } from './extensions/scriptqueue';
+// import { ScriptQueue } from './extensions/scriptqueue';
 import { IME } from './ime';
 
 /**
@@ -48,7 +48,9 @@ const VirtualKeyboard = new function () {
      *  @scope private
      */
     var options = {
-        'layout': null
+        'layout': null,
+        'showKeyboardMaps': true,
+        'showKeyboardLayouts': true
     }
     /**
      *  ID prefix
@@ -426,7 +428,8 @@ const VirtualKeyboard = new function () {
         /*
         *  save layout name
         */
-        DocumentCookie.set('vk_layout', code)
+        // TODO: Figure out where to store the layout
+        // DocumentCookie.set('vk_layout', code)
         return true;
     }
 
@@ -888,7 +891,7 @@ const VirtualKeyboard = new function () {
      *  @scope private
      */
     var switchMapping = function (e) {
-        DocumentCookie.set('vk_mapping', e.target.value);
+        // DocumentCookie.set('vk_mapping', e.target.value);
         keymap = keymaps[e.target.value];
     }
     /**********************************************************
@@ -1520,93 +1523,99 @@ const VirtualKeyboard = new function () {
         html.push(" >\xa0" + char + "\xa0</span>");
         return html.join("");
     }
-        /**
-         *  Keyboard initializer
-         */
-        ; (function () {
+
+    /**
+     *  Keyboard initializer
+     */
+    self.init = function(opts) {
+        var _opts = mergeObject(options, opts);
+        console.log(_opts);
+
+        /*
+        *  create keyboard UI
+        */
+        nodes.keyboard = document.createElement('div');
+        nodes.keyboard.unselectable = "on";
+        nodes.keyboard.id = 'virtualKeyboard';
+        nodes.keyboard.innerHTML = ('<div id=\"kbDesk\"><!-- --></div>'
+            + '<select id=\"kb_langselector\" ' + (_opts.showKeyboardLayouts ? '' : 'style=\"display: none;\"') + '></select>'
+            + '<select id=\"kb_mappingselector\" ' + (_opts.showKeyboardMaps ? '' : 'style=\"display: none;\"') + '></select>'
+            // + '<div id="copyrights" nofocus="true"><a href="http://debugger.ru/projects/virtualkeyboard" target="_blank" title="&copy;2006-2009 Debugger.ru">VirtualKeyboard ' + self.$VERSION$ + '</a></div>'
+        ).replace(/(<\w+)/g, "$1 unselectable='on' ");
+
+        nodes.desk = nodes.keyboard.firstChild;
+
+        var el = nodes.keyboard.childNodes.item(1);
+        EM.addEventListener(el, 'change', function (e) { self.switchLayout(this.value) });
+        nodes.langbox = el;
+
+        var el = el.nextSibling
+            , mapGroup = "";
+
+        // TODO: Figure out where to store the mapping
+        // keymap = DocumentCookie.get('vk_mapping');
+
+        if (!keymaps.hasOwnProperty(keymap))
+            keymap = 'QWERTY Standard';
+
+        for (var i in keymaps) {
+            var map = keymaps[i].split("").map(function (c) { return c.charCodeAt(0) });
             /*
-            *  create keyboard UI
+            *  add control keys
             */
-            nodes.keyboard = document.createElement('div');
-            nodes.keyboard.unselectable = "on";
-            nodes.keyboard.id = 'virtualKeyboard';
-            nodes.keyboard.innerHTML = ("<div id=\"kbDesk\"><!-- --></div>"
-                + "<select id=\"kb_langselector\"></select>"
-                + "<select id=\"kb_mappingselector\"></select>"
-                + '<div id="copyrights" nofocus="true"><a href="http://debugger.ru/projects/virtualkeyboard" target="_blank" title="&copy;2006-2009 Debugger.ru">VirtualKeyboard ' + self.$VERSION$ + '</a></div>'
-            ).replace(/(<\w+)/g, "$1 unselectable='on' ");
-
-            nodes.desk = nodes.keyboard.firstChild;
-
-            var el = nodes.keyboard.childNodes.item(1);
-            EM.addEventListener(el, 'change', function (e) { self.switchLayout(this.value) });
-            nodes.langbox = el;
-
-            var el = el.nextSibling
-                , mapGroup = "";
-
-            keymap = DocumentCookie.get('vk_mapping');
-
-            if (!keymaps.hasOwnProperty(keymap))
-                keymap = 'QWERTY Standard';
-
-            for (var i in keymaps) {
-                var map = keymaps[i].split("").map(function (c) { return c.charCodeAt(0) });
-                /*
-                *  add control keys
-                */
-                map.splice(14, 0, 8, 9);
-                map.splice(28, 0, 13, 20);
-                map.splice(41, 0, 16);
-                map.splice(52, 0, 16, 46, 17, 18, 32, 18, 17);
-                /*
-                *  convert keymap array to the object, to have better typing speed
-                */
-                var tk = map;
-                map = [];
-                for (var z = 0, kL = tk.length; z < kL; z++) {
-                    map[tk[z]] = z;
-                }
-                keymaps[i] = map;
-
-                /*
-                *  append mapping to the dropdown box
-                */
-                tk = i.split(" ", 2);
-                if (mapGroup.indexOf(mapGroup = tk[0]) != 0) {
-                    el.appendChild(document.createElement('optgroup'))
-                    el.lastChild.label = mapGroup;
-                }
-                map = document.createElement('option');
-                el.lastChild.appendChild(map);
-                map.value = i;
-                map.innerHTML = tk[1];
-                map.selected = (i == keymap);
+            map.splice(14, 0, 8, 9);
+            map.splice(28, 0, 13, 20);
+            map.splice(41, 0, 16);
+            map.splice(52, 0, 16, 46, 17, 18, 32, 18, 17);
+            /*
+            *  convert keymap array to the object, to have better typing speed
+            */
+            var tk = map;
+            map = [];
+            for (var z = 0, kL = tk.length; z < kL; z++) {
+                map[tk[z]] = z;
             }
-            keymap = keymaps[keymap];
-            EM.addEventListener(el, 'change', switchMapping);
+            keymaps[i] = map;
 
             /*
-            *  attach some event handlers
+            *  append mapping to the dropdown box
             */
-            EM.addEventListener(nodes.desk, 'mousedown', _btnMousedown_);
-            EM.addEventListener(nodes.desk, 'mouseup', _btnClick_);
-            EM.addEventListener(nodes.desk, 'mouseover', _btnMouseInOut_);
-            EM.addEventListener(nodes.desk, 'mouseout', _btnMouseInOut_);
-            EM.addEventListener(nodes.desk, 'click', EM.preventDefaultAction);
+            tk = i.split(" ", 2);
+            if (mapGroup.indexOf(mapGroup = tk[0]) != 0) {
+                el.appendChild(document.createElement('optgroup'))
+                el.lastChild.label = mapGroup;
+            }
+            map = document.createElement('option');
+            el.lastChild.appendChild(map);
+            map.value = i;
+            map.innerHTML = tk[1];
+            map.selected = (i == keymap);
+        }
+        keymap = keymaps[keymap];
+        EM.addEventListener(el, 'change', switchMapping);
 
-            /*
-            *  selection and reset of the selection in the target input
-            *  Safari likes to have some checks against 'select' node
-            */
-            nodes.keyboard.onmousedown = function (e) { if (!e || !e.target.tagName || 'select' != e.target.tagName.toLowerCase()) return false }
+        /*
+        *  attach some event handlers
+        */
+        EM.addEventListener(nodes.desk, 'mousedown', _btnMousedown_);
+        EM.addEventListener(nodes.desk, 'mouseup', _btnClick_);
+        EM.addEventListener(nodes.desk, 'mouseover', _btnMouseInOut_);
+        EM.addEventListener(nodes.desk, 'mouseout', _btnMouseInOut_);
+        EM.addEventListener(nodes.desk, 'click', EM.preventDefaultAction);
 
-            /*
-            *  check url params for the default layout name
-            */
-            var opts = getScriptQuery('virtualkeyboard.js');
-            options.layout = DocumentCookie.get('vk_layout') || opts.vk_layout || null;
-        })();
+        /*
+        *  selection and reset of the selection in the target input
+        *  Safari likes to have some checks against 'select' node
+        */
+        nodes.keyboard.onmousedown = function (e) { if (!e || !e.target.tagName || 'select' != e.target.tagName.toLowerCase()) return false }
+
+        /*
+        *  check url params for the default layout name
+        */
+        // var opts = getScriptQuery('virtualkeyboard.js');
+        // options.layout = DocumentCookie.get('vk_layout') || opts.vk_layout || null;
+        options.layout = _opts.layout;
+    }
 }
 /**
  *  Container for the custom language IMEs, don't mess with the window object
@@ -1629,20 +1638,25 @@ VirtualKeyboard.IME = IME;
  * jQuery wrapper for the virtual keyboard
  */
 (function ($) {
-    $.fn.virtkeys = function () {
-        this.VirtualKeyboard = VirtualKeyboard;
+    $.fn.virtkeys = function (opts) {
+        var jqObj = this;
 
-        this.open = _open;
-        this.close = _close;
-        this.toggle = _toggle;
+        (function () {
+            VirtualKeyboard.init(opts || {});
+        
+            jqObj.VirtualKeyboard = VirtualKeyboard;
+            
+            jqObj.open = _open;
+            jqObj.close = _close;
+            jqObj.toggle = _toggle;
 
-        this.getLayoutCodes = _getLayoutCodes;
-        this.switchLayout = _switchLayout;
-        this.addLayouts = _addLayouts;
-        this.getLoadedLayouts = _getLoadedLayouts;
+            jqObj.getLayoutCodes = _getLayoutCodes;
+            jqObj.switchLayout = _switchLayout;
+            jqObj.addLayouts = _addLayouts;
+            jqObj.getLoadedLayouts = _getLoadedLayouts;
 
-        this.enableIME = _enableIME;
-        this.addIMELanguages = _addIMELanguages;
+            jqObj.addIMELanguages = _addIMELanguages;
+        })();
 
 
         function _open (input) {
@@ -1676,13 +1690,6 @@ VirtualKeyboard.IME = IME;
             return $.fn.virtkeys._layouts;
         }
 
-        function _enableIME(ime) {
-            if (ime === undefined && (ime = $.fn.virtkeys._ime) === undefined)
-                throw 'Object containing IME cannot be found.';
-
-            VirtualKeyboard.IME = ime;
-        }
-
         function _addIMELanguages(langs) {
             if (langs === undefined && (langs = $.fn.virtkeys._langs) === undefined)
                 throw 'Object containing IME languages cannot be found.';
@@ -1690,7 +1697,7 @@ VirtualKeyboard.IME = IME;
             VirtualKeyboard.Langs = langs;
         }
 
-        return this;
+        return jqObj;
     };
 
     $.fn.virtkeys._layouts = {};
