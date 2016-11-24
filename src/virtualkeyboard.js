@@ -11,6 +11,7 @@ import { DOM } from './extensions/dom';
 import { EM } from './extensions/eventmanager';
 // import { ScriptQueue } from './extensions/scriptqueue';
 import { IME } from './ime';
+import './extensions/DOMEventsLevel3.shim';
 
 /**
  * $Id: virtualkeyboard.js 585 2009-03-18 11:37:19Z wingedfox $
@@ -503,6 +504,7 @@ const VirtualKeyboard = new function () {
      *  @param {EventTarget} evt optional event object, to be used to re-map the keyCode
      *  @scope private
      */
+    // TODO: Use the KeyboardEvent polyfill https://github.com/termi/DOM-Keyboard-Event-Level-3-polyfill
     var _keyClicker_ = function (key, evt) {
         var chr = ""
             , ret = false;
@@ -563,7 +565,7 @@ const VirtualKeyboard = new function () {
                 *  throw an error when selection is required or multiple chars submitted
                 *  it's simpler than write number of nesting if..else statements
                 */
-                if (chr[1] || chr[0].length > 1 || chr.charCodeAt(0) > 0x7fff || nodes.attachedInput.contentDocument || '\t' == chr[0]) {
+                if (chr[1] || chr[0].length > 1 || chr[0].charCodeAt(0) > 0x7fff || nodes.attachedInput.contentDocument || '\t' == chr[0]) {
                     throw new Error;
                 }
                 var ck = chr[0].charCodeAt(0);
@@ -571,31 +573,38 @@ const VirtualKeyboard = new function () {
                 *  trying to create an event, borrowed from YAHOO.util.UserAction
                 */
                 if (isFunction(document.createEvent)) {
-                    var evt = null;
-                    try {
-                        evt = document.createEvent("KeyEvents");
-                        evt.initKeyEvent('keypress', false, true, nodes.attachedInput.contentWindow, false, false, false, false, 0, ck);
-                    } catch (ex) {
-                        /*
-                        *  Safari implements
-                        */
-                        evt = document.createEvent("KeyboardEvents");
-                        evt.initKeyEvent('keypress', false, true, nodes.attachedInput.contentWindow, false, false, false, false, ck, 0);
-                    }
+                    var evt = new KeyboardEvent('keypress', { key: key, char: chr[0], bubbles: true, cancelable: true });
                     evt.VK_bypass = true;
+
+                    /**
+                     * Register one-time event listener that executes after all registered listeners and updates the input's value
+                     */
+                    EM.addOneTimeEventListener(nodes.attachedInput, 'keypress', function(e) {
+                        DocumentSelection.insertAtCursor(nodes.attachedInput, chr[0]);
+                        /*
+                        *  select as much, as __charProcessor callback requested
+                        */
+                        if (chr[1]) {
+                            DocumentSelection.setRange(nodes.attachedInput, -chr[1], 0, true);
+                        }
+                    });
+
+                    /**
+                     * Fire the new keyboard event
+                     */
                     nodes.attachedInput.dispatchEvent(evt);
+
+                    /**
+                     * Fire input event
+                     */
+                    var inputEvt = new Event('input', { bubbles: true, cancelable: false, composed: false });
+                    nodes.attachedInput.dispatchEvent(inputEvt);
                 } else {
                     evt.keyCode = 10 == ck ? 13 : ck;
                     ret = true;
                 }
             } catch (e) {
-                DocumentSelection.insertAtCursor(nodes.attachedInput, chr[0]);
-                /*
-                *  select as much, as __charProcessor callback requested
-                */
-                if (chr[1]) {
-                    DocumentSelection.setRange(nodes.attachedInput, -chr[1], 0, true);
-                }
+                console.error(e);
             }
         }
         return ret;

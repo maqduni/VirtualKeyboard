@@ -67,6 +67,8 @@
 	
 	var _ime = __webpack_require__(/*! ./ime */ 9);
 	
+	__webpack_require__(/*! ./extensions/DOMEventsLevel3.shim */ 10);
+	
 	var VirtualKeyboard = new function () {
 	    var self = this;
 	    self.$VERSION$ = "3.6.1.585";
@@ -361,33 +363,33 @@
 	
 	            try {
 	
-	                if (chr[1] || chr[0].length > 1 || chr.charCodeAt(0) > 0x7fff || nodes.attachedInput.contentDocument || '\t' == chr[0]) {
+	                if (chr[1] || chr[0].length > 1 || chr[0].charCodeAt(0) > 0x7fff || nodes.attachedInput.contentDocument || '\t' == chr[0]) {
 	                    throw new Error();
 	                }
 	                var ck = chr[0].charCodeAt(0);
 	
 	                if ((0, _helpers.isFunction)(document.createEvent)) {
-	                    var evt = null;
-	                    try {
-	                        evt = document.createEvent("KeyEvents");
-	                        evt.initKeyEvent('keypress', false, true, nodes.attachedInput.contentWindow, false, false, false, false, 0, ck);
-	                    } catch (ex) {
-	
-	                        evt = document.createEvent("KeyboardEvents");
-	                        evt.initKeyEvent('keypress', false, true, nodes.attachedInput.contentWindow, false, false, false, false, ck, 0);
-	                    }
+	                    var evt = new KeyboardEvent('keypress', { key: key, char: chr[0], bubbles: true, cancelable: true });
 	                    evt.VK_bypass = true;
+	
+	                    _eventmanager.EM.addOneTimeEventListener(nodes.attachedInput, 'keypress', function (e) {
+	                        _documentselection.DocumentSelection.insertAtCursor(nodes.attachedInput, chr[0]);
+	
+	                        if (chr[1]) {
+	                            _documentselection.DocumentSelection.setRange(nodes.attachedInput, -chr[1], 0, true);
+	                        }
+	                    });
+	
 	                    nodes.attachedInput.dispatchEvent(evt);
+	
+	                    var inputEvt = new Event('input', { bubbles: true, cancelable: false, composed: false });
+	                    nodes.attachedInput.dispatchEvent(inputEvt);
 	                } else {
 	                    evt.keyCode = 10 == ck ? 13 : ck;
 	                    ret = true;
 	                }
 	            } catch (e) {
-	                _documentselection.DocumentSelection.insertAtCursor(nodes.attachedInput, chr[0]);
-	
-	                if (chr[1]) {
-	                    _documentselection.DocumentSelection.setRange(nodes.attachedInput, -chr[1], 0, true);
-	                }
+	                console.error(e);
 	            }
 	        }
 	        return ret;
@@ -2706,6 +2708,16 @@
 	        return false;
 	    };
 	
+	    self.addOneTimeEventListener = function (el, et, h) {
+	
+	        self.addEventListener(el, et, function oneTimeEventHandler(e) {
+	
+	            self.removeEventListener(el, e.type, oneTimeEventHandler);
+	
+	            return h(e);
+	        });
+	    };
+	
 	    self.removeEventListener = function (el, et, h) {
 	        if (!el || !(0, _helpers.isFunction)(h)) return false;
 	        var id = getUEID(el),
@@ -3048,6 +3060,840 @@
 	}();
 	
 	exports.IME = IME;
+
+/***/ },
+/* 10 */
+/*!************************************************!*\
+  !*** ./src/extensions/DOMEventsLevel3.shim.js ***!
+  \************************************************/
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
+	var __GCC__ECMA_SCRIPT_SHIMS__ = false;
+	
+	var __GCC__NEW_KEYBOARD_EVENTS_PROPOSAL__ = true;
+	
+	if (!function (global) {
+		try {
+			return new global["KeyboardEvent"]("keyup", { "key": "a" })["key"] == "a";
+		} catch (__e__) {
+			return false;
+		}
+	}(undefined)) void function () {
+	
+		var global = this,
+		    _DOM_KEY_LOCATION_STANDARD = 0x00,
+		    _DOM_KEY_LOCATION_LEFT = 0x01,
+		    _DOM_KEY_LOCATION_RIGHT = 0x02,
+		    _DOM_KEY_LOCATION_NUMPAD = 0x03,
+		    _DOM_KEY_LOCATION_MOBILE = 0x04,
+		    _DOM_KEY_LOCATION_JOYSTICK = 0x05,
+		    _Event_prototype = global["Event"].prototype,
+		    _KeyboardEvent_prototype = global["KeyboardEvent"] && global["KeyboardEvent"].prototype || _Event_prototype,
+		    _Event_prototype__native_key_getter,
+		    _Event_prototype__native_char_getter,
+		    _Event_prototype__native_location_getter,
+		    _Event_prototype__native_keyCode_getter,
+		    _Object_defineProperty = Object.defineProperty || function (obj, prop, val) {
+			if ("value" in val) {
+				obj[prop] = val["value"];
+				return;
+			}
+	
+			if ("get" in val) {
+				obj.__defineGetter__(prop, val["get"]);
+			}
+			if ("set" in val) {
+				obj.__defineSetter__(prop, val["set"]);
+			}
+		},
+		    _Object_getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor,
+		    getObjectPropertyGetter = function getObjectPropertyGetter(obj, prop) {
+			return "__lookupGetter__" in obj ? obj.__lookupGetter__(prop) : _Object_getOwnPropertyDescriptor ? (_Object_getOwnPropertyDescriptor(obj, prop) || {})["get"] : void 0;
+		},
+		    KEYBOARD_EVENTS = {
+			"keydown": null,
+			"keyup": null,
+			"keypress": null
+		},
+		    UUID = 1,
+		    _event_handleUUID = "_h_9e2",
+		    _event_eventsUUID = "_e_8vj",
+		    _shim_event_keyCodeUUID = _event_handleUUID + "__keyCode",
+		    _keyboardEvent_properties_dictionary = {
+			"char": "",
+			"key": "",
+			"location": _DOM_KEY_LOCATION_STANDARD,
+			"ctrlKey": false,
+			"shiftKey": false,
+			"altKey": false,
+			"metaKey": false,
+			"repeat": false,
+			"locale": "",
+	
+			"detail": 0,
+			"bubbles": false,
+			"cancelable": false
+		},
+		    _Event_has_stopImmediatePropagation = "stopImmediatePropagation" in document.createEvent("Event"),
+		    _Array_slice = Array.prototype.slice,
+		    _unSafeBind = Function.prototype.bind || function (object, var_args) {
+			var __method = this,
+			    args = _Array_slice.call(arguments, 1);
+			return function () {
+				return __method.apply(object, args.concat(_Array_slice.call(arguments)));
+			};
+		},
+		    _hasOwnProperty = _unSafeBind.call(Function.prototype.call, Object.prototype.hasOwnProperty),
+		    _try_initKeyboardEvent = true,
+		    _getter_KeyboardEvent_location,
+		    _initKeyboardEvent_type = function (_createEvent) {
+			try {
+				var e = _createEvent.call(document, "KeyboardEvent"); //Old browsers unsupported "KeyboardEvent"
+	
+				e.initKeyboardEvent("keyup", false, false, global, "+", 3, true, false, true, false, false);
+				return (e["keyIdentifier"] || e["key"]) == "+" && (e["keyLocation"] || e["location"]) == 3 && (e.ctrlKey ? e.altKey ? 1 : 3 : e.shiftKey ? 2 : 4) || e["char"] == "+" && 5 || 9;
+			} catch (__e__) {
+				return 0;
+			}
+		}(document.createEvent),
+		    canOverwrite_keyCode,
+		    canOverwrite_which,
+		    testKeyboardEvent = function () {
+			try {
+				return this && new this("keyup", { "key": "a", "char": "b" }) || {};
+			} catch (e) {
+				return {};
+			}
+		}.call(global["KeyboardEvent"]),
+		    newKeyboadrEvent_key_property_proposal__getKey_,
+		    __Property_descriptor__ = {
+			"enumerable": false,
+			"configurable": true,
+			"writable": true
+		};
+	
+		if (_Object_getOwnPropertyDescriptor) {
+			//Modern browser
+	
+			_Event_prototype__native_key_getter = getObjectPropertyGetter(_KeyboardEvent_prototype, "key") || getObjectPropertyGetter(testKeyboardEvent, "key");
+	
+			_Event_prototype__native_char_getter = getObjectPropertyGetter(_KeyboardEvent_prototype, "char") || getObjectPropertyGetter(testKeyboardEvent, "char");
+	
+			_Event_prototype__native_location_getter = getObjectPropertyGetter(_KeyboardEvent_prototype, "location") || getObjectPropertyGetter(testKeyboardEvent, "location");
+	
+			_Event_prototype__native_keyCode_getter = getObjectPropertyGetter(_KeyboardEvent_prototype, "keyCode");
+		}
+	
+		var VK__NON_CHARACTER_KEYS = {
+			3: 'Cancel',
+			6: 'Help',
+			8: 'Backspace',
+			9: 'Tab',
+			12: 'Clear',
+			13: 'Enter',
+	
+			16: 'Shift',
+			17: 'Control',
+			18: 'Alt',
+			19: 'Pause',
+			20: 'CapsLock',
+	
+			21: 'KanaMode',
+			22: 'HangulMode',
+			23: 'JunjaMode',
+			24: 'FinalMode',
+			25: 'HanjaMode',
+	
+			27: 'Esc',
+	
+			28: 'Convert',
+			29: 'Nonconvert',
+			30: 'Accept',
+			31: 'ModeChange',
+	
+			32: 'Spacebar',
+			33: 'PageUp',
+			34: 'PageDown',
+			35: 'End',
+			36: 'Home',
+			37: 'Left',
+			38: 'Up',
+			39: 'Right',
+			40: 'Down',
+			41: 'Select',
+	
+			43: 'Execute',
+			44: 'PrintScreen',
+			45: 'Insert',
+			46: 'Del',
+			47: 'Help',
+	
+			91: { _key: 'OS', _char: false, _location: _DOM_KEY_LOCATION_LEFT },
+			92: { _key: 'OS', _char: false, _location: _DOM_KEY_LOCATION_RIGHT },
+			93: 'Menu',
+	
+			106: { _key: 'Multiply', _char: '*', _location: _DOM_KEY_LOCATION_NUMPAD },
+			107: { _key: 'Add', _char: '+', _location: _DOM_KEY_LOCATION_NUMPAD },
+			108: { _key: 'Separator', _char: false, _location: _DOM_KEY_LOCATION_NUMPAD },
+			109: { _key: 'Subtract', _char: '-', _location: _DOM_KEY_LOCATION_NUMPAD },
+			110: { _key: 'Decimal', _char: '.', _location: _DOM_KEY_LOCATION_NUMPAD },
+			111: { _key: 'Divide', _char: '/', _location: _DOM_KEY_LOCATION_NUMPAD },
+	
+			144: { _key: 'NumLock', _char: false, _location: _DOM_KEY_LOCATION_NUMPAD },
+			145: 'ScrollLock',
+	
+			180: 'LaunchMail',
+			181: 'SelectMedia',
+			182: 'LaunchApplication1',
+			183: 'LaunchApplication2',
+	
+			224: 'Meta',
+			229: 'Process',
+	
+			246: 'Attn',
+			247: 'Crsel',
+			248: 'Exsel',
+			249: 'EraseEof',
+			251: 'Zoom',
+			254: 'Clear'
+		},
+		    VK__CHARACTER_KEYS__DOWN_UP = __GCC__NEW_KEYBOARD_EVENTS_PROPOSAL__ ? {
+			186: ';' // 'ж', ';', ':'
+			, 187: '=',
+			188: ',' // 'б', ',', '<'
+			, 189: '-',
+			190: '.' // 'ю', '.', '>'
+			, 191: '/' // '.', '/', '?'
+			, 192: '`' // 'ё', '`', '~'
+			, 219: '[' // 'х', '[', '{'
+			, 220: '\\' //'\', '\', '|'
+			, 221: ']' // 'ъ', '[', '{'
+			, 222: "'" // 'э', '"', '''
+			, 226: '\\' // '\', '|', '/'
+		} : {},
+		    _userAgent_ = global.navigator.userAgent.toLowerCase(),
+		    _IS_MAC = !!~(global.navigator.platform + "").indexOf("Mac"),
+		    _BROWSER = {},
+		    __i,
+		    IS_NEED_KEYCODE_BUGFIX,
+		    IS_OPERA_DOUBBLE_KEYPRESS_BUG,
+		    tmp,
+		    _KEYPRESS_VK__CHARACTER_KEYS__DOWN_UP_DELTA = 999;
+	
+		for (__i = 105; __i > 95; --__i) {
+	
+			tmp = __i - 96;
+			VK__CHARACTER_KEYS__DOWN_UP[tmp + 48] = _Event_prototype__native_key_getter ? tmp + "" : { _key: tmp + "" }; //48, 49, 50 ... 57
+	
+	
+			VK__CHARACTER_KEYS__DOWN_UP[__i] = { _key: tmp + "", _location: _DOM_KEY_LOCATION_NUMPAD }; //96, 97, 98 .. 105
+		}
+	
+		if (!_Event_prototype__native_key_getter) {
+			for (__i in VK__CHARACTER_KEYS__DOWN_UP) {
+				if (_hasOwnProperty(VK__CHARACTER_KEYS__DOWN_UP, __i) && _typeof(VK__CHARACTER_KEYS__DOWN_UP[__i]) != "object") {
+					VK__CHARACTER_KEYS__DOWN_UP[__i] = { _key: VK__CHARACTER_KEYS__DOWN_UP[__i] };
+				}
+			}
+		}
+	
+		for (__i = 135; __i > 111; --__i) {
+			VK__NON_CHARACTER_KEYS[__i] = "F" + (__i - 111);
+		}
+	
+		if (global["opera"]) {
+			// Opera special cases
+			if (!_Event_prototype__native_char_getter) {
+	
+				IS_NEED_KEYCODE_BUGFIX = true;
+				IS_OPERA_DOUBBLE_KEYPRESS_BUG = true; //TODO:: avoid Opera double keypress bug
+	
+				VK__NON_CHARACTER_KEYS[57351] = VK__NON_CHARACTER_KEYS[93];
+				VK__CHARACTER_KEYS__DOWN_UP[187] = VK__CHARACTER_KEYS__DOWN_UP[61] = { _key: 0, _keyCode: 187 };
+				VK__CHARACTER_KEYS__DOWN_UP[189] = VK__CHARACTER_KEYS__DOWN_UP[109] = { _key: 0, _keyCode: 189, _location: 3 }; //TODO: location=3 only for win?
+				if (_IS_MAC) {}
+			}
+		} else {
+	
+			_BROWSER["names"] = _userAgent_.match(/(mozilla|compatible|chrome|webkit|safari)/gi);
+			__i = _BROWSER["names"] && _BROWSER["names"].length || 0;
+			while (__i-- > 0) {
+				_BROWSER[_BROWSER["names"][__i]] = true;
+			}if (_BROWSER["mozilla"] && !_BROWSER["compatible"] && !_BROWSER["webkit"]) {
+				// Mozilla special cases
+	
+				IS_NEED_KEYCODE_BUGFIX = true;
+	
+				_BROWSER._version = +(_userAgent_.match(/firefox\/([0-9]+)/) || [])[1];
+	
+				tmp = VK__CHARACTER_KEYS__DOWN_UP[61] = VK__CHARACTER_KEYS__DOWN_UP[187]; //US Standard
+				tmp._keyCode = 187;
+				tmp = VK__CHARACTER_KEYS__DOWN_UP[173] = VK__CHARACTER_KEYS__DOWN_UP[189]; //US Standard
+				tmp._keyCode = 189;
+				tmp = VK__CHARACTER_KEYS__DOWN_UP[59] = VK__CHARACTER_KEYS__DOWN_UP[186]; //US Standard
+				tmp._keyCode = 186;
+				if (_BROWSER._version < 15) {
+					VK__NON_CHARACTER_KEYS[107] = VK__NON_CHARACTER_KEYS[61];
+					VK__CHARACTER_KEYS__DOWN_UP[109] = VK__CHARACTER_KEYS__DOWN_UP[173];
+				}
+			} else if (_BROWSER["safari"] && !_BROWSER["chrome"]) {
+				// Safari WebKit special cases
+				if (_IS_MAC) {}
+			} else if (_BROWSER["chrome"]) {
+				// Chrome WebKit special cases
+				if (_IS_MAC) {}
+			}
+		}
+	
+		var VK__FAILED_KEYIDENTIFIER = { //webkit 'keyIdentifier' or Opera12.10/IE9 'key'
+	
+	
+			'Escape': null,
+			'Win': null,
+			'Scroll': null,
+			'Apps': null,
+	
+			'Delete': null,
+			'Window': null,
+			'ContextMenu': null,
+			'Mul': null
+		};
+	
+		function _KeyboardEvent(type, dict) {
+			// KeyboardEvent  constructor
+			var e;
+			try {
+				e = document.createEvent("KeyboardEvent");
+			} catch (err) {
+				e = document.createEvent("Event");
+			}
+	
+			dict = dict || {};
+	
+			var localDict = {},
+			    _prop_name,
+			    _prop_value;
+	
+			for (_prop_name in _keyboardEvent_properties_dictionary) {
+				if (_hasOwnProperty(_keyboardEvent_properties_dictionary, _prop_name)) {
+					localDict[_prop_name] = _prop_name in dict && (_prop_value = dict[_prop_name]) !== void 0 ? _prop_value : _keyboardEvent_properties_dictionary[_prop_name];
+				}
+			}var _ctrlKey = localDict["ctrlKey"] || false,
+			    _shiftKey = localDict["shiftKey"] || false,
+			    _altKey = localDict["altKey"] || false,
+			    _metaKey = localDict["metaKey"] || false,
+			    _altGraphKey = localDict["altGraphKey"] || false,
+			    modifiersListArg = _initKeyboardEvent_type > 3 ? ((_ctrlKey ? "Control" : "") + (_shiftKey ? " Shift" : "") + (_altKey ? " Alt" : "") + (_metaKey ? " Meta" : "") + (_altGraphKey ? " AltGraph" : "")).trim() : null,
+			    _key = (localDict["key"] || "") + "",
+			    _char = (localDict["char"] || "") + "",
+			    _location = localDict["location"],
+			    _keyCode = _key && _key.charCodeAt(0) || 0,
+			    _bubbles = localDict["bubbles"],
+			    _cancelable = localDict["cancelable"],
+			    _repeat = localDict["repeat"],
+			    _locale = localDict["locale"],
+			    success_init = false;
+	
+			_keyCode = localDict["keyCode"] = localDict["keyCode"] || _keyCode;
+			localDict["which"] = localDict["which"] || _keyCode;
+	
+			if (!canOverwrite_keyCode) {
+				//IE9
+				e["__keyCode"] = _keyCode;
+				e["__charCode"] = _keyCode;
+				e["__which"] = _keyCode;
+			}
+	
+			if ("initKeyEvent" in e) {
+				//FF
+	
+	
+				e.initKeyEvent(type, _bubbles, _cancelable, global, _ctrlKey, _altKey, _shiftKey, _metaKey, _keyCode, _keyCode);
+				success_init = true;
+			} else if ("initKeyboardEvent" in e) {
+	
+				if (_try_initKeyboardEvent) {
+					try {
+						if (_initKeyboardEvent_type == 1) {
+							e.initKeyboardEvent(type, _bubbles, _cancelable, global, _key, _location, _ctrlKey, _shiftKey, _altKey, _metaKey, _altGraphKey);
+							e["__char"] = _char;
+						} else if (_initKeyboardEvent_type == 2) {
+							e.initKeyboardEvent(type, _bubbles, _cancelable, global, _ctrlKey, _altKey, _shiftKey, _metaKey, _keyCode, _keyCode);
+						} else if (_initKeyboardEvent_type == 3) {
+							e.initKeyboardEvent(type, _bubbles, _cancelable, global, _key, _location, _ctrlKey, _altKey, _shiftKey, _metaKey, _altGraphKey);
+							e["__char"] = _char;
+						} else if (_initKeyboardEvent_type == 4) {
+							e.initKeyboardEvent(type, _bubbles, _cancelable, global, _key, _location, modifiersListArg, _repeat, _locale);
+							e["__char"] = _char;
+						} else if (_initKeyboardEvent_type == 5) {
+							e.initKeyboardEvent(type, _bubbles, _cancelable, global, _char, _key, _location, modifiersListArg, _repeat, _locale);
+						} else {
+							e.initKeyboardEvent(type, _bubbles, _cancelable, global, _key, _location, modifiersListArg, _repeat, _locale);
+						}
+						success_init = true;
+					} catch (__e__) {
+						_try_initKeyboardEvent = false;
+					}
+				}
+			}
+	
+			if (!success_init) {
+				e.initEvent(type, _bubbles, _cancelable, global);
+				e["__char"] = _char;
+				e["__key"] = _key;
+				e["__location"] = _location;
+			}
+	
+			for (_prop_name in _keyboardEvent_properties_dictionary) {
+				if (_hasOwnProperty(_keyboardEvent_properties_dictionary, _prop_name)) {
+					if (e[_prop_name] != localDict[_prop_name]) {
+						delete e[_prop_name];
+						_Object_defineProperty(e, _prop_name, { writable: true, "value": localDict[_prop_name] });
+					}
+				}
+			}if (!("isTrusted" in e)) e.isTrusted = false;
+	
+			return e;
+		}
+	
+		_KeyboardEvent["DOM_KEY_LOCATION_STANDARD"] = _DOM_KEY_LOCATION_STANDARD;
+		_KeyboardEvent["DOM_KEY_LOCATION_LEFT"] = _DOM_KEY_LOCATION_LEFT;
+		_KeyboardEvent["DOM_KEY_LOCATION_RIGHT"] = _DOM_KEY_LOCATION_RIGHT;
+		_KeyboardEvent["DOM_KEY_LOCATION_NUMPAD"] = _DOM_KEY_LOCATION_NUMPAD;
+		_KeyboardEvent["DOM_KEY_LOCATION_MOBILE"] = _DOM_KEY_LOCATION_MOBILE;
+		_KeyboardEvent["DOM_KEY_LOCATION_JOYSTICK"] = _DOM_KEY_LOCATION_JOYSTICK;
+		_KeyboardEvent.prototype = _KeyboardEvent_prototype;
+	
+		tmp = new _KeyboardEvent("keyup");
+	
+		try {
+			delete tmp["keyCode"];
+			_Object_defineProperty(tmp, "keyCode", { "writable": true, "value": 9 });
+			delete tmp["which"];
+			_Object_defineProperty(tmp, "which", { "writable": true, "value": 9 });
+		} catch (e) {}
+	
+		canOverwrite_which = tmp.which === 9;
+	
+		if (!(canOverwrite_keyCode = tmp.keyCode == 9) && _Event_prototype__native_keyCode_getter) {
+			_Object_defineProperty(_KeyboardEvent_prototype, "keyCode", {
+				"enumerable": true,
+				"configurable": true,
+				"get": function get() {
+					if ("__keyCode" in this) return this["__keyCode"];
+	
+					return _Event_prototype__native_keyCode_getter.call(this);
+				},
+				"set": function set(newValue) {
+					return this["__keyCode"] = isNaN(newValue) ? 0 : newValue;
+				}
+			});
+			_Object_defineProperty(_KeyboardEvent_prototype, "charCode", {
+				"enumerable": true,
+				"configurable": true,
+				"get": function get() {
+					if ("__charCode" in this) return this["__charCode"];
+	
+					return _Event_prototype__native_keyCode_getter.call(this);
+				},
+				"set": function set(newValue) {
+					return this["__charCode"] = isNaN(newValue) ? 0 : newValue;
+				}
+			});
+		} else {
+			_Event_prototype__native_keyCode_getter = void 0;
+		}
+	
+		if (__GCC__NEW_KEYBOARD_EVENTS_PROPOSAL__) {
+			newKeyboadrEvent_key_property_proposal__getKey_ = function newKeyboadrEvent_key_property_proposal__getKey_(originalKey) {
+				originalKey = originalKey || "";
+				if (originalKey.length > 1) {
+					//fast IS SPECIAL KEY
+					return originalKey;
+				}
+	
+				var eventKeyCode = this.which || this.keyCode;
+	
+				if (this.type == "keypress") {
+	
+					eventKeyCode += _KEYPRESS_VK__CHARACTER_KEYS__DOWN_UP_DELTA;
+				}
+	
+				var vkCharacterKey = VK__CHARACTER_KEYS__DOWN_UP[eventKeyCode],
+				    value_is_object = vkCharacterKey && (typeof vkCharacterKey === "undefined" ? "undefined" : _typeof(vkCharacterKey)) == "object",
+				    _key = value_is_object ? vkCharacterKey._key : vkCharacterKey,
+				    _keyCode;
+	
+				if (_key) return _key;
+	
+				_keyCode = vkCharacterKey && vkCharacterKey._keyCode || eventKeyCode > 64 && eventKeyCode < 91 && eventKeyCode //a-z
+				;
+	
+				return (_keyCode && String.fromCharCode(_keyCode) || originalKey).toLowerCase();
+			};
+		}
+	
+		function _helper_isRight_keyIdentifier(_keyIdentifier) {
+			return _keyIdentifier && !(_keyIdentifier in VK__FAILED_KEYIDENTIFIER) && _keyIdentifier.substring(0, 2) !== "U+";
+		}
+	
+		_Object_defineProperty(_KeyboardEvent_prototype, "key", {
+			"enumerable": true,
+			"configurable": true,
+			"get": function get() {
+				var thisObj = this,
+				    value;
+	
+				if (_Event_prototype__native_key_getter) {
+					//IE9 & Opera
+					value = _Event_prototype__native_key_getter.call(thisObj);
+	
+					if (value && value.length < 2 || _helper_isRight_keyIdentifier(value)) {
+						if (__GCC__NEW_KEYBOARD_EVENTS_PROPOSAL__) {
+							return newKeyboadrEvent_key_property_proposal__getKey_.call(this, value);
+						} else {
+							return value;
+						}
+					}
+				}
+	
+				if ("__key" in thisObj) return thisObj["__key"];
+	
+				if (!(thisObj.type in KEYBOARD_EVENTS)) return;
+	
+				var _keyCode = thisObj.which || thisObj.keyCode,
+				    notKeyPress = thisObj.type != "keypress",
+				    value_is_object;
+	
+				if (notKeyPress) {
+					if ("keyIdentifier" in thisObj && _helper_isRight_keyIdentifier(thisObj["keyIdentifier"])) {
+						value = thisObj["keyIdentifier"];
+					} else if (!__GCC__NEW_KEYBOARD_EVENTS_PROPOSAL__ || !notKeyPress || (value = VK__NON_CHARACTER_KEYS[_keyCode])) {
+						value = value || VK__CHARACTER_KEYS__DOWN_UP[_keyCode];
+						value_is_object = value && (typeof value === "undefined" ? "undefined" : _typeof(value)) == "object";
+						value = (value_is_object ? value._key : value) || thisObj["char"] //char getter
+						;
+					} else {
+						value = newKeyboadrEvent_key_property_proposal__getKey_.call(this, value);
+					}
+				} else {
+					value = thisObj["char"]; //char getter
+				}
+	
+				__Property_descriptor__["value"] = value;
+				_Object_defineProperty(thisObj, "__key", __Property_descriptor__);
+				return value;
+			}
+		});
+		_Object_defineProperty(_KeyboardEvent_prototype, "char", {
+			"enumerable": true,
+			"configurable": true,
+			"get": function get() {
+				var thisObj = this;
+	
+				if (!(thisObj.type in KEYBOARD_EVENTS)) return;
+	
+				if (thisObj.ctrlKey || thisObj.altKey || thisObj.metaKey) {
+					return "";
+				}
+	
+				if ("__char" in thisObj) return thisObj["__char"];
+	
+				var value,
+				    notKeyPress = thisObj.type != "keypress",
+				    _keyCode = !notKeyPress && thisObj["__keyCode"] || thisObj.which || thisObj.keyCode,
+				    value_is_object;
+	
+				if (notKeyPress && (value = VK__NON_CHARACTER_KEYS[_keyCode]) && !((typeof value === "undefined" ? "undefined" : _typeof(value)) == "object")) {
+	
+					return "";
+				}
+	
+				if (_Event_prototype__native_char_getter && (value = _Event_prototype__native_char_getter.call(thisObj)) !== null) {//IE9 & Opera
+	
+	
+				} else {
+					value = VK__CHARACTER_KEYS__DOWN_UP[_keyCode] || VK__NON_CHARACTER_KEYS[_keyCode];
+					value_is_object = value && (typeof value === "undefined" ? "undefined" : _typeof(value)) == "object";
+	
+					if (!value_is_object || value._char === false) {
+	
+						value = "";
+					} else if (value_is_object && value._char !== void 0) {
+						value = value._char || "";
+					} else {
+						if ("keyIdentifier" in thisObj && _helper_isRight_keyIdentifier(thisObj["keyIdentifier"])) {
+							//webkit
+							value = "";
+						} else {
+							value = String.fromCharCode(_keyCode);
+							if (notKeyPress && !thisObj.shiftKey) {
+								value = value.toLowerCase();
+							}
+						}
+					}
+				}
+	
+				__Property_descriptor__["value"] = value;
+				_Object_defineProperty(thisObj, "__char", __Property_descriptor__);
+				return value;
+			}
+		});
+		_getter_KeyboardEvent_location = function _getter_KeyboardEvent_location() {
+			var thisObj = this;
+	
+			if (_Event_prototype__native_location_getter) {
+				//IE9
+				return _Event_prototype__native_location_getter.call(this);
+			}
+	
+			if ("__location" in thisObj) return thisObj["__location"];
+	
+			if (!(thisObj.type in KEYBOARD_EVENTS)) return;
+	
+			var _keyCode = thisObj.which || thisObj.keyCode,
+			    notKeyPress = thisObj.type != "keypress",
+			    value;
+	
+			if ("keyLocation" in thisObj) {
+				//webkit
+				value = thisObj["keyLocation"];
+			} else {
+				value = notKeyPress && (VK__NON_CHARACTER_KEYS[_keyCode] || VK__CHARACTER_KEYS__DOWN_UP[_keyCode]);
+				value = (typeof value === "undefined" ? "undefined" : _typeof(value)) == "object" && value._location || _DOM_KEY_LOCATION_STANDARD;
+			}
+	
+			__Property_descriptor__["value"] = value;
+			_Object_defineProperty(thisObj, "__location", __Property_descriptor__);
+			return value;
+		};
+		_Object_defineProperty(_KeyboardEvent_prototype, "location", {
+			"enumerable": true,
+			"configurable": true,
+			"get": _getter_KeyboardEvent_location
+		});
+	
+		function _keyDownHandler(e) {
+			var _keyCode = e.which || e.keyCode,
+			    thisObj = this._this,
+			    listener,
+			    _,
+			    vkNonCharacter;
+	
+			if (e.ctrlKey || e.altKey || e.metaKey //Special events
+			|| (vkNonCharacter = VK__NON_CHARACTER_KEYS[_keyCode]) && vkNonCharacter._key !== 0 || e["__key"] || e.isTrusted === false) {
+				listener = this._listener;
+	
+				if ((typeof listener === "undefined" ? "undefined" : _typeof(listener)) === "object") {
+					if ("handleEvent" in listener) {
+						thisObj = listener;
+						listener = listener.handleEvent;
+					}
+				}
+	
+				if (listener && listener.apply) {
+					listener.apply(thisObj, arguments);
+				}
+			} else {
+				_ = thisObj["_"] || (thisObj["_"] = {});
+				_[_shim_event_keyCodeUUID] = _keyCode;
+	
+				if ("keyLocation" in e) {
+					//TODO:: tests
+					_["_keyLocation"] = e.keyLocation;
+				}
+			}
+		}
+	
+		function _keyDown_via_keyPress_Handler(e) {
+			var _keyCode,
+			    _charCode = e.which || e.keyCode,
+			    thisObj = this,
+			    _ = thisObj["_"],
+			    _event,
+			    need__stopImmediatePropagation__and__preventDefault,
+			    vkCharacterKey,
+			    __key;
+	
+			if (e["__stopNow"]) return;
+	
+			if (_ && _shim_event_keyCodeUUID in _) {
+				_keyCode = _[_shim_event_keyCodeUUID];
+				delete _[_shim_event_keyCodeUUID];
+	
+				e["__keyCode"] = _keyCode; //save keyCode from 'keydown' and 'keyup' for 'keypress'
+	
+				if (vkCharacterKey = VK__CHARACTER_KEYS__DOWN_UP[_keyCode]) {
+					if (IS_NEED_KEYCODE_BUGFIX && vkCharacterKey._keyCode) {
+						_keyCode = vkCharacterKey._keyCode;
+					}
+				}
+	
+				if ("keyLocation" in e && "_keyLocation" in _) {
+					//webkit//TODO:: tests
+					delete e.keyLocation;
+					e.keyLocation = _["_keyLocation"];
+				}
+	
+				if (__GCC__NEW_KEYBOARD_EVENTS_PROPOSAL__) {
+					if (_keyCode < 91 && _keyCode > 64 && _charCode != _keyCode && !VK__CHARACTER_KEYS__DOWN_UP[_keyCode]) {
+						vkCharacterKey = vkCharacterKey || (VK__CHARACTER_KEYS__DOWN_UP[_keyCode] = {});
+						vkCharacterKey._keyCode = _keyCode;
+					}
+				}
+	
+				__key = vkCharacterKey && vkCharacterKey._key || String.fromCharCode(_keyCode).toLowerCase();
+	
+				e["__key"] = __key;
+				e["__char"] = String.fromCharCode(_charCode);
+	
+				_event = new global["KeyboardEvent"]("keydown", e);
+	
+				delete _event["keyLocation"]; //webkit
+				delete _event["__location"];
+	
+				if (canOverwrite_which) {
+					//Not Safari
+					delete _event["which"];
+					_Object_defineProperty(_event, "which", { "value": _keyCode });
+				} else {
+					_event["__which"] = _keyCode;
+				}
+				if (canOverwrite_keyCode) {
+					//Not IE9 | Not Safari
+					delete _event["keyCode"];
+					_Object_defineProperty(_event, "keyCode", { "value": _keyCode });
+				}
+				_event["__location"] = _getter_KeyboardEvent_location.call(_event);
+	
+				if (!_Event_prototype__native_key_getter) {
+					//Not IE9 & Opera 12
+					vkCharacterKey = vkCharacterKey || (vkCharacterKey = VK__CHARACTER_KEYS__DOWN_UP[_charCode] = VK__CHARACTER_KEYS__DOWN_UP[_keyCode] = {});
+	
+					vkCharacterKey._char = _event["char"];
+	
+					if (!__GCC__NEW_KEYBOARD_EVENTS_PROPOSAL__) {
+						vkCharacterKey._key = vkCharacterKey._char;
+					}
+				}
+	
+				need__stopImmediatePropagation__and__preventDefault = !(e.target || thisObj).dispatchEvent(_event);
+			} else {
+	
+				need__stopImmediatePropagation__and__preventDefault = !e.ctrlKey && (_ = VK__CHARACTER_KEYS__DOWN_UP[_charCode]) && ((typeof _ === "undefined" ? "undefined" : _typeof(_)) == "object" ? _._key || "" : _).length > 1 ? 2 //Only stopImmediatePropagation
+				: 0 //Nothing
+				;
+			}
+	
+			if (need__stopImmediatePropagation__and__preventDefault) {
+				if (need__stopImmediatePropagation__and__preventDefault === true) {
+					e.preventDefault();
+				}
+	
+				if (_Event_has_stopImmediatePropagation) {
+					e.stopImmediatePropagation();
+				} else {
+					e["__stopNow"] = true;
+					e.stopPropagation();
+				}
+			}
+		}
+	
+		if (!_Event_prototype__native_char_getter) {
+			[(tmp = global["Document"]) && tmp.prototype || global["document"], (tmp = global["HTMLDocument"]) && tmp.prototype, (tmp = global["Window"]) && tmp.prototype || global, (tmp = global["Node"]) && tmp.prototype, (tmp = global["Element"]) && tmp.prototype].forEach(function (prototypeToFix) {
+				if (!prototypeToFix || !_hasOwnProperty(prototypeToFix, "addEventListener")) return;
+	
+				var old_addEventListener = prototypeToFix.addEventListener,
+				    old_removeEventListener = prototypeToFix.removeEventListener;
+	
+				if (old_addEventListener) {
+					prototypeToFix.addEventListener = function (type, listener, useCapture) {
+						var thisObj = this,
+						    _,
+						    _eventsUUID,
+						    _event_UUID,
+						    _events_countUUID;
+	
+						if ((type + "").toLowerCase() === "keydown") {
+	
+							_eventsUUID = _event_eventsUUID + (useCapture ? "-" : "") + type;
+							_event_UUID = _eventsUUID + (listener[_event_handleUUID] || (listener[_event_handleUUID] = ++UUID));
+							_events_countUUID = _eventsUUID + "__count";
+	
+							if (!(_ = this["_"])) _ = this["_"] = {};
+	
+							if (_event_UUID in _) return;
+	
+							if (_[_events_countUUID] === void 0) {
+								old_addEventListener.call(thisObj, "keypress", _keyDown_via_keyPress_Handler, true);
+							}
+	
+							_[_events_countUUID] = (_[_events_countUUID] || 0) + 1;
+	
+							arguments[1] = _[_event_UUID] = _unSafeBind.call(_keyDownHandler, { _listener: listener, _this: this });
+						}
+	
+						return old_addEventListener.apply(thisObj, arguments);
+					};
+	
+					if (old_removeEventListener) prototypeToFix.removeEventListener = function (type, listener, useCapture) {
+						var thisObj = this,
+						    _,
+						    _eventsUUID,
+						    _event_UUID,
+						    _events_countUUID;
+	
+						if ((type + "").toLowerCase() === "keydown") {
+							_eventsUUID = _event_eventsUUID + (useCapture ? "-" : "") + type;
+							_event_UUID = _eventsUUID + listener[_event_handleUUID];
+							_events_countUUID = _eventsUUID + "__count";
+							_ = thisObj["_"];
+	
+							if (_event_UUID && _ && _[_events_countUUID]) {
+								--_[_events_countUUID];
+	
+								if (arguments[1] = _[_event_UUID]) {
+									delete _[_event_UUID];
+								}
+							}
+						}
+	
+						return old_removeEventListener.apply(thisObj, arguments);
+					};
+				}
+			});
+		} else {
+			document.addEventListener("keydown", function (e) {
+				var _char = _Event_prototype__native_char_getter ? _Event_prototype__native_char_getter.call(e) : e["char"],
+				    _charCode = _char && _char.charCodeAt(0),
+				    _keyCode,
+				    vkCharacter,
+				    vkCharacter_key;
+				if (_charCode && !VK__CHARACTER_KEYS__DOWN_UP[_charCode += _KEYPRESS_VK__CHARACTER_KEYS__DOWN_UP_DELTA]) {
+					vkCharacter = VK__CHARACTER_KEYS__DOWN_UP[_charCode] = {};
+					_keyCode = e.keyCode;
+					if (vkCharacter_key = VK__CHARACTER_KEYS__DOWN_UP[_keyCode]) {
+						_char = (typeof vkCharacter_key === "undefined" ? "undefined" : _typeof(vkCharacter_key)) == "object" && vkCharacter_key._key || vkCharacter_key;
+					} else {
+						_char = String.fromCharCode(_keyCode);
+					}
+					if (_keyCode > 64 && _keyCode < 91 && _keyCode) {
+						//a-z
+						_char = _char.toLowerCase();
+					}
+					vkCharacter._key = _char;
+				}
+			}, true);
+		}
+	
+		global["KeyboardEvent"] = _KeyboardEvent;
+	
+		_DOM_KEY_LOCATION_LEFT = _DOM_KEY_LOCATION_RIGHT = _DOM_KEY_LOCATION_NUMPAD = _DOM_KEY_LOCATION_MOBILE = _DOM_KEY_LOCATION_JOYSTICK = _Object_getOwnPropertyDescriptor = getObjectPropertyGetter = tmp = testKeyboardEvent = _KeyboardEvent = _KeyboardEvent_prototype = __i = _Event_prototype = _userAgent_ = _BROWSER = _IS_MAC = null;
+	}.call(window);
 
 /***/ }
 /******/ ]);

@@ -214,6 +214,21 @@ var EM = new function () {
         }
         return false;
     };
+
+    /**
+     * Creates a one-time event listener
+     * https://www.sitepoint.com/create-one-time-events-javascript
+     */
+    self.addOneTimeEventListener = function (el, et, h) {
+        // create event
+        self.addEventListener(el, et, function oneTimeEventHandler(e) {
+            // remove event
+            self.removeEventListener(el, e.type, oneTimeEventHandler);
+            // call handler
+            return h(e);
+        });
+    };
+
     /**
      *  Removes the event listener from the queue
      *
