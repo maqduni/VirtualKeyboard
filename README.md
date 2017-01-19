@@ -5,3 +5,6 @@ The project was originally written by a Russian team and published to Code Proje
 
 ## Installation
 In your project directory run `bower install virtkeys`
+
+## Contribute
+Anyone willing to contribute to this project is very welcome.
