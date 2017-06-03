@@ -573,6 +573,12 @@ const VirtualKeyboard = new function () {
                 *  trying to create an event, borrowed from YAHOO.util.UserAction
                 */
                 if (isFunction(document.createEvent)) {
+                    /**
+                     * http://bililite.com/blog/2015/01/14/rethinking-fn-sendkeys/
+                     * https://www.npmjs.com/package/keysim
+                     * http://www.howtocreate.co.uk/tutorials/javascript/domevents#domevld1
+                     * http://stackoverflow.com/questions/13944835/how-to-simulate-typing-in-input-field-using-jquery
+                     */
                     var evt = new KeyboardEvent('keypress', { key: key, char: chr[0], bubbles: true, cancelable: true });
                     evt.VK_bypass = true;
 
